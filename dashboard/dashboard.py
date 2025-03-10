@@ -5,6 +5,47 @@ import streamlit as st
 
 sns.set(style='dark')
 
+# Helper function
+def create_byseason_df(df):
+    byseason_df = all_df.groupby(by="season").agg({
+        "cnt": "sum"
+        }).reset_index()
+    byseason_df.rename(columns={
+       "cnt": "total_rentals"
+    }, inplace=True)
+
+    return byseason_df
+
+def create_monthly_rentals_df(df):
+    monthly_rentals_df = all_df.groupby(by=["yr", "mnth"]).agg({
+        "cnt": "sum"
+        }).reset_index()
+    monthly_rentals_df["yr"] = monthly_rentals_df["yr"].map({
+        0: "2011", 1: "2012"})
+    
+    month_map = {
+        1: "Januari", 2: "Februari", 3: "Maret", 4: "April",
+        5: "Mei", 6: "Juni", 7: "Juli", 8: "Agustus",
+        9: "September", 10: "Oktober", 11: "November", 12: "Desember"
+        }
+    
+    monthly_rentals_df["mnth"] = monthly_rentals_df["mnth"].map(month_map)
+
+    return monthly_rentals_df
+
+def create_df_grouped(df):
+    df_cluster = all_df.copy()
+    df_grouped = df_cluster.groupby(["season", "weathersit"]).agg({
+        "cnt": "mean"
+        }).reset_index()
+    
+    df_grouped.rename(columns={
+        "cnt": "avg_rentals"
+        }, inplace=True)
+    
+    return df_grouped
+
+# Load cleaned data
 all_df = pd.read_csv("all_data.csv")
 
 datetime_columns = ["dteday"]
@@ -14,6 +55,7 @@ all_df.reset_index(inplace=True)
 for column in datetime_columns:
     all_df[column] = pd.to_datetime(all_df[column])
 
+# Filter data
 min_date = all_df["dteday"].min()
 max_date = all_df["dteday"].max()
  
@@ -29,15 +71,18 @@ with st.sidebar:
 main_df = all_df[(all_df["dteday"] >= str(start_date)) & 
                 (all_df["dteday"] <= str(end_date))]
 
+# Menyiapkan berbagai dataframe
+byseason_df = create_byseason_df(main_df)
+monthly_rentals_df = create_monthly_rentals_df(main_df)
+df_grouped = create_df_grouped(main_df)
+
 st.title('Bike Sharing :bike:')
 
-# Visualisasi Data 1
-byseason_df = all_df.groupby(by="season").agg({"cnt": "sum"}).reset_index()
-byseason_df.rename(columns={"cnt": "total_rentals"}, inplace=True)
+# Visualisasi Data 1 (Total Penyewaan per Musim)
+st.header("Penyewaan Sepeda Tiap Musim")
 
 season_labels = {1: "Spring", 2: "Summer", 3: "Fall", 4: "Winter"}
 colors = ["#D3D3D3", "#D3D3D3", "#72BCD4", "#D3D3D3"]
-
 
 fig, ax = plt.subplots(figsize=(10, 5))
 sns.barplot(
@@ -50,14 +95,13 @@ sns.barplot(
 
 ax.set_xticklabels([season_labels[season] for season in byseason_df["season"]])
 ax.set_title("Total Penyewaan Sepeda Tiap Musim", loc="center", fontsize=15)
-ax.set_ylabel(None)
+ax.set_ylabel("Total Sewa (dalam Jutaan Rupiah)")
 
-st.header("Penyewaan Sepeda Tiap Musim")
 st.pyplot(fig)
 
 with st.expander("Lihat Penjelasan"):
     st.write(
-        """Mayoritas pengguna lebih suka menyewa sepeda padaa musim gugur (fall), 
+        """Mayoritas pengguna lebih suka menyewa sepeda pada musim gugur (fall), 
         diikuti oleh musim panas (summer),musim dingin (winter), dan musim semi (spring).
         """
     )
@@ -65,26 +109,15 @@ with st.expander("Lihat Penjelasan"):
 # Visualisasi Data 2
 st.header("Total Penyewaan Sepeda Tiap Bulan")
 
-monthly_rentals_df = all_df.groupby(by=["yr", "mnth"]).agg({"cnt": "sum"}).reset_index()
-
-monthly_rentals_df["yr"] = monthly_rentals_df["yr"].map({0: "2011", 1: "2012"})
-
-month_map = {
-    1: "Januari", 2: "Februari", 3: "Maret", 4: "April",
-    5: "Mei", 6: "Juni", 7: "Juli", 8: "Agustus",
-    9: "September", 10: "Oktober", 11: "November", 12: "Desember"
-}
-monthly_rentals_df["mnth"] = monthly_rentals_df["mnth"].map(month_map)
-
 col1, col2 = st.columns(2)
 
 with col1:
     total_rentals_2011 = monthly_rentals_df[monthly_rentals_df["yr"] == "2011"]["cnt"].sum()
-    st.metric("Total Rentals in 2011", value=total_rentals_2011)
+    st.metric("Total Penyewaan di Tahun 2011", value=total_rentals_2011)
 
 with col2:
     total_rentals_2012 = monthly_rentals_df[monthly_rentals_df["yr"] == "2012"]["cnt"].sum()
-    st.metric("Total Rentals in 2012", value=total_rentals_2012)
+    st.metric("Total Penyewaan di Tahun 2012", value=total_rentals_2012)
 
 fig2, ax2 = plt.subplots(figsize=(10, 5))
 sns.lineplot(
@@ -117,11 +150,8 @@ with st.expander("Lihat Penjelasan"):
     )
 
 
-# Visualisasi Data 3
+# Visualisasi Data 3 (Rata-rata Penyewaan Sepeda per Musim dan Cuaca)
 st.header("Rata-rata Penyewaan Sepeda per Musim dan Cuaca")
-df_cluster = all_df.copy()
-df_grouped = df_cluster.groupby(["season", "weathersit"]).agg({"cnt": "mean"}).reset_index()
-df_grouped.rename(columns={"cnt": "avg_rentals"}, inplace=True)
 
 col1, col2 = st.columns(2)
 
@@ -132,7 +162,6 @@ ax3.set_title("Rata-rata Penyewaan Sepeda per Musim", fontsize=13)
 ax3.set_xlabel("Musim")
 ax3.set_ylabel("Rata-rata Penyewaan")
 ax3.set_xticklabels(["Spring", "Summer", "Fall", "Winter"])
-
 
 fig4, ax4 = plt.subplots(figsize=(5, 5))
 colors_weathersit = ["#446DD4", "#dae1f5", "#dae1f5", "#dae1f5"]
