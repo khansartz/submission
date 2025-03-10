@@ -2,7 +2,10 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
 import streamlit as st
+import os
 
+# Dapatkan path absolut berdasarkan lokasi file script
+file_path = os.path.join(os.path.dirname(__file__), "all_data.csv")
 
 sns.set(style='dark')
 
