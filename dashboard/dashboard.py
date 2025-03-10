@@ -159,7 +159,7 @@ st.header("Rata-rata Penyewaan Sepeda per Musim dan Cuaca")
 
 col1, col2 = st.columns(2)
 
-fig3, ax3 = plt.subplots(figsize=(5, 5))
+fig3, ax3 = plt.subplots(figsize=(6, 6))
 colors_season = ["#D3D3D3", "#D3D3D3", "#72BCD4", "#D3D3D3"]
 sns.barplot(x="season", y="avg_rentals", data=df_grouped, palette=colors_season, errorbar=None, ax=ax3)
 ax3.set_title("Rata-rata Penyewaan Sepeda per Musim", fontsize=13)
@@ -167,7 +167,7 @@ ax3.set_xlabel("Musim")
 ax3.set_ylabel("Rata-rata Penyewaan")
 ax3.set_xticklabels(["Spring", "Summer", "Fall", "Winter"])
 
-fig4, ax4 = plt.subplots(figsize=(5, 5))
+fig4, ax4 = plt.subplots(figsize=(6, 6))
 colors_weathersit = ["#446DD4", "#dae1f5", "#dae1f5", "#dae1f5"]
 sns.barplot(x="weathersit", y="avg_rentals", data=df_grouped, palette=colors_weathersit, errorbar=None, ax=ax4)
 ax4.set_title("Rata-rata Penyewaan Sepeda Berdasarkan Cuaca", fontsize=13)
